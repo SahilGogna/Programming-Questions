@@ -1,65 +1,49 @@
 package com.hackerrank;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 public class MindGeeksNumbers {
 
 	private static Random random = new Random();
-	private static int LOWER_BOUND = -1000;
-	private static int UPPER_BOUND = 1000;
+	private static int LOWER_BOUND = -10000;
+	private static int UPPER_BOUND = 10000;
+	private static int LOWER_RANGE = 1;
+	private static int UPPER_RANGE = 6; // exclusive
+	private static int LENGTH_OF_DIVISORS = 3;
 
 	public static void main(String[] args) {
-		List<Integer> list_1 = generateList();
-		List<Integer> list_2 = generateList();
-		List<Integer> list_3 = generateList();
-		List<Integer> list_4 = generateList();
-		List<Integer> list_5 = generateList();
+
+		// 1. creating 5 lists
+		List<List<Integer>> lists = IntStream.range(LOWER_RANGE, UPPER_RANGE).mapToObj(x -> generateList())
+				.collect(Collectors.toList());
+
+		// 2. filtering lists
+		List<List<Integer>> filteredLists = lists.stream().map(x -> getFilteredList(x)).collect(Collectors.toList());
+//		filteredLists.stream().forEach(list -> System.out.println(list.size()));
+
 		
-		list_1 = getFilteredList(list_1);
-		list_2 = getFilteredList(list_2);
-		list_3 = getFilteredList(list_3);
-		list_4 = getFilteredList(list_4);
-		list_5 = getFilteredList(list_5);
+		// 3. printing sum of each list
+		filteredLists.stream().mapToInt(x -> getListSum(x)).forEach(System.out::println);
 		
-		print("--------------------");
-		print(getListSum(list_1));
-		print(getListSum(list_2));
-		print(getListSum(list_3));
-		print(getListSum(list_4));
-		print(getListSum(list_5));
-		print("--------------------");
 		
-		print(getDistinctCount(list_1));
-		print(getDistinctCount(list_2));
-		print(getDistinctCount(list_3));
-		print(getDistinctCount(list_4));
-		print(getDistinctCount(list_5));
-		print("--------------------");
+		// 4. printing number of distinct elements in each list
+		filteredLists.stream().mapToInt(x -> getDistinctCount(x)).forEach(System.out::println);
 		
-		Stream<Integer> stream_1 = joinStreams(list_1.stream(), list_2.stream());
-		Stream<Integer> stream_2 = joinStreams(list_3.stream(), list_4.stream());
-		Stream<Integer> joinedStream = joinStreams(stream_1,stream_2);
 		
-		List<Integer> mergedList = joinStreams(joinedStream,list_5.stream()).collect(Collectors.toList());
-		print(getListSum(mergedList)/mergedList.size());
-                
+		// 5. merging filtered lists in part 2 to a single list
+		List<Integer> allMergedLists = filteredLists.stream().flatMap(List::stream).collect(Collectors.toList());
+		
+		// 6. Print out the global average value of this final list
+		print(getListSum(allMergedLists)/allMergedLists.size());
 
 	}
-	
-	/**
-	 * 
-	 * @param firstStream
-	 * @param secondStream
-	 * @return merge 2 streams into one
-	 */
-	public static Stream<Integer> joinStreams(Stream<Integer> firstStream, Stream<Integer> secondStream){
-		return Stream.concat(firstStream,secondStream);
-	}
-	
+
 	/**
 	 * 
 	 * @param list
@@ -68,19 +52,15 @@ public class MindGeeksNumbers {
 	public static int getDistinctCount(List<Integer> list) {
 		return (int) list.stream().distinct().count();
 	}
-	
+
 	/**
 	 * prints the sum of numbers of list
 	 * @param list
 	 */
 	public static int getListSum(List<Integer> list) {
-		int sum = 0;
-		for(int number:list) {
-			sum+=number;
-		}
-		return sum;
+		return list.stream().reduce(0, (a, b) -> a + b);
 	}
-	
+
 	/**
 	 * prints parameter on the console
 	 * @param object
@@ -96,11 +76,32 @@ public class MindGeeksNumbers {
 	 * @return list of numbers divisible by any of the number in array
 	 */
 	public static List<Integer> getFilteredList(List<Integer> list) {
-		int[] numberArray = generateRandomNumberArray();
-		List<Integer> filteredList = list.stream().filter(
-				number -> number % numberArray[0] == 0 || number % numberArray[1] == 0 || number % numberArray[2] == 0)
-				.collect(Collectors.toList());
+		List<Integer> filteredList = list.stream().filter(number -> isDivisible(number)).collect(Collectors.toList());
 		return filteredList;
+	}
+
+	/**
+	 * 
+	 * @param number
+	 * @return if the number is divisible by any number in set
+	 */
+	public static Boolean isDivisible(int number) {
+//		Boolean flag = true;
+		Boolean flag = false;
+		Set<Integer> generatedDivisors = generateRandomDivisors();
+//		for (int divisor : generatedDivisors) {
+//			flag = (number % divisor == 0);
+//			if (flag == false)
+//				return flag;
+//		}
+
+		for (int divisor : generatedDivisors) {
+			if (number % divisor == 0) {
+				flag = true;
+				break;
+			}
+		}
+		return flag;
 	}
 
 	/**
@@ -132,32 +133,15 @@ public class MindGeeksNumbers {
 	 * @param random
 	 * @return an array of 3 different random numbers
 	 */
-	public static int[] generateRandomNumberArray() {
-		int[] threeRandomNumber = new int[3];
-		int firstNumber = generateRandomNumber();
-		int secondNumber = generateRandomNumber();
-		while (checkEquality(firstNumber, secondNumber)) {
-			secondNumber = generateRandomNumber();
+	public static Set<Integer> generateRandomDivisors() {
+		Set<Integer> hash_Set = new HashSet<Integer>();
+		while (hash_Set.size() != LENGTH_OF_DIVISORS) {
+			int randomNumber = generateRandomNumber();
+			if(randomNumber!= 0) {
+				hash_Set.add(randomNumber);
+			}
 		}
-		int thirdNumber = generateRandomNumber();
-		while (checkEquality(firstNumber, thirdNumber) || checkEquality(secondNumber, thirdNumber)) {
-			thirdNumber = generateRandomNumber();
-		}
-		System.out.println("Numbers Generated: "+firstNumber+" "+secondNumber+" "+thirdNumber);
-		threeRandomNumber[0] = firstNumber;
-		threeRandomNumber[1] = secondNumber;
-		threeRandomNumber[2] = thirdNumber;
-		return threeRandomNumber;
-	}
-
-	/**
-	 * 
-	 * @param firstNumber
-	 * @param secondNumber
-	 * @return true if firstNumber = secondNumber
-	 */
-	public static boolean checkEquality(int firstNumber, int secondNumber) {
-		return firstNumber == secondNumber;
+		return hash_Set;
 	}
 
 }
